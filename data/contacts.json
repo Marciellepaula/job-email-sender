@@ -1,0 +1,22 @@
+[
+  {
+    "company_name": "TechCorp Brasil",
+    "email": "rh@techcorp.com.br",
+    "recruiter_name": "Ana Souza"
+  },
+  {
+    "company_name": "Inovação Digital",
+    "email": "vagas@inovacaodigital.com",
+    "recruiter_name": ""
+  },
+  {
+    "company_name": "CodeLeap",
+    "email": "careers@codeleap.co.uk",
+    "recruiter_name": "Vini Garcia"
+  },
+  {
+    "company_name": "Startup XYZ",
+    "email": "hiring@startupxyz.io",
+    "recruiter_name": "Carlos Lima"
+  }
+]
