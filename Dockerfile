@@ -27,4 +27,4 @@ EXPOSE 3001
 
 ENV NODE_ENV=production
 
-CMD ["sh", "-c", "npx sequelize-cli db:migrate --env production && node src/server.js"]
+CMD ["node", "src/server.js"]
