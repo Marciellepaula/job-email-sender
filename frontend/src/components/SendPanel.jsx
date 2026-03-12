@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Loader2, CheckCircle, XCircle, SkipForward, FileText } from "lucide-react";
+import { Send, Loader2, CheckCircle, XCircle, SkipForward, FileText, Building2 } from "lucide-react";
 import { api } from "../api";
 
+const DEFAULT_SENDER_NAME = "Marcielle Paula";
 const DEFAULT_SUBJECT = "Candidatura para Vaga de Desenvolvedor(a) de Software — {company}";
 const DEFAULT_MESSAGE = `Olá {recruiter},
 
@@ -17,6 +18,7 @@ Marcielle Paula`;
 export default function SendPanel({ contacts, selectedIds, resumeUploaded }) {
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState([]);
+  const [senderName, setSenderName] = useState(() => localStorage.getItem("senderName") || DEFAULT_SENDER_NAME);
   const [subject, setSubject] = useState(() => localStorage.getItem("emailSubject") || DEFAULT_SUBJECT);
   const [message, setMessage] = useState(() => localStorage.getItem("emailMessage") || DEFAULT_MESSAGE);
   const [showTemplate, setShowTemplate] = useState(false);
@@ -24,6 +26,10 @@ export default function SendPanel({ contacts, selectedIds, resumeUploaded }) {
 
   const sendCount = selectedIds.size > 0 ? selectedIds.size : contacts.length;
   const canSend = sendCount > 0 && resumeUploaded;
+
+  useEffect(() => {
+    localStorage.setItem("senderName", senderName);
+  }, [senderName]);
 
   useEffect(() => {
     localStorage.setItem("emailSubject", subject);
@@ -39,7 +45,7 @@ export default function SendPanel({ contacts, selectedIds, resumeUploaded }) {
     setResults([]);
     try {
       const contactIds = selectedIds.size > 0 ? [...selectedIds] : null;
-      await api.sendEmails({ subject, message, contactIds });
+      await api.sendEmails({ senderName, subject, message, contactIds });
       pollRef.current = setInterval(pollStatus, 2000);
     } catch (err) {
       setSending(false);
@@ -65,6 +71,7 @@ export default function SendPanel({ contacts, selectedIds, resumeUploaded }) {
   }, []);
 
   function handleReset() {
+    setSenderName(DEFAULT_SENDER_NAME);
     setSubject(DEFAULT_SUBJECT);
     setMessage(DEFAULT_MESSAGE);
   }
@@ -103,6 +110,19 @@ export default function SendPanel({ contacts, selectedIds, resumeUploaded }) {
             )}
           </button>
         </div>
+      </div>
+
+      <div className="sender-name-bar">
+        <label htmlFor="sender-name"><Building2 size={15} /> Remetente:</label>
+        <input
+          id="sender-name"
+          type="text"
+          className="sender-name-input"
+          value={senderName}
+          onChange={(e) => setSenderName(e.target.value)}
+          placeholder="Nome ou empresa remetente..."
+        />
+        <small className="sender-preview">Aparece como: <strong>{senderName || "?"}</strong> &lt;marcielle0644@gmail.com&gt;</small>
       </div>
 
       {showTemplate && (

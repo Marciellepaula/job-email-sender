@@ -62,7 +62,7 @@ function getResendClient() {
 }
 
 async function sendViaResend({ from, to, subject, text, html, attachments }) {
-  const sender = config.resend.from || from;
+  const sender = from || config.resend.from;
   const data = { from: sender, to: [to], subject, text, html };
 
   if (attachments?.length) {
@@ -93,7 +93,7 @@ function getBrevoTransporter() {
 }
 
 async function sendViaBrevo({ from, to, subject, text, html, attachments }) {
-  const sender = config.brevo.from || from;
+  const sender = from || config.brevo.from;
   const info = await getBrevoTransporter().sendMail({ from: sender, to, subject, text, html, attachments });
   return { provider: "brevo", messageId: info.messageId };
 }

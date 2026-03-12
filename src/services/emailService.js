@@ -33,7 +33,7 @@ export const emailService = {
     return sendingResults;
   },
 
-  async sendAll({ subject: customSubject, message: customMessage, contactIds } = {}, onProgress) {
+  async sendAll({ senderName: customSenderName, subject: customSubject, message: customMessage, contactIds } = {}, onProgress) {
     if (sendingInProgress) {
       throw new AppError("Already sending emails", 409);
     }
@@ -52,10 +52,16 @@ export const emailService = {
     const resumePath = findResume();
     const hasAttachment = !!resumePath;
     const results = [];
-    const fromAddress = config.brevo.from
-      || config.resend.from
-      || config.mailgun.from
-      || `"${config.senderName}" <${config.smtp.user}>`;
+
+    const displayName = customSenderName || config.senderName || "Job Sender";
+    const emailAddr =
+      config.brevo.from?.match(/<(.+)>/)?.[1]
+      || config.resend.from?.match(/<(.+)>/)?.[1]
+      || config.mailgun.from?.match(/<(.+)>/)?.[1]
+      || config.smtp.user
+      || "";
+    const rawFrom = config.brevo.from || config.resend.from || config.mailgun.from || config.smtp.user || "";
+    const fromAddress = emailAddr ? `${displayName} <${emailAddr}>` : rawFrom;
 
     console.log(`[Email] Resume path: ${resumePath || "NOT FOUND"}`);
     console.log(`[Email] From: ${fromAddress}`);

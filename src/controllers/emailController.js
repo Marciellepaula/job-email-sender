@@ -3,8 +3,8 @@ import { success } from "../utils/response.js";
 
 export const emailController = {
   async send(req, res) {
-    const { subject, message, contactIds } = req.body || {};
-    emailService.sendAll({ subject, message, contactIds }, (progress) => {
+    const { senderName, subject, message, contactIds } = req.body || {};
+    emailService.sendAll({ senderName, subject, message, contactIds }, (progress) => {
       console.log(`[Progress] ${progress.status}: ${progress.email}`);
     }).catch((err) => console.error("[Send Error]", err.message));
 
