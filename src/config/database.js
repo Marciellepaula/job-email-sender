@@ -1,9 +1,14 @@
 import { Sequelize } from "sequelize";
 import { config } from "./index.js";
 
+const isProduction = config.nodeEnv === "production";
+
 const sequelize = new Sequelize(config.database.url, {
   dialect: "postgres",
-  logging: config.nodeEnv === "development" ? false : false,
+  logging: false,
+  dialectOptions: isProduction
+    ? { ssl: { require: true, rejectUnauthorized: false } }
+    : {},
   define: {
     underscored: true,
     timestamps: true,

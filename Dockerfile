@@ -25,4 +25,6 @@ RUN mkdir -p uploads data
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx sequelize-cli db:migrate && node src/server.js"]
+ENV NODE_ENV=production
+
+CMD ["sh", "-c", "npx sequelize-cli db:migrate --env production && node src/server.js"]
