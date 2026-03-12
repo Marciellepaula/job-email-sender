@@ -1,18 +1,33 @@
 import { sentLogRepository } from "../repositories/sentLogRepository.js";
 
+function normalizeMessageId(raw) {
+  if (!raw) return null;
+  const id = raw.trim();
+  if (id.startsWith("<") && id.endsWith(">")) return id;
+  if (id.includes("@")) return `<${id}>`;
+  return id;
+}
+
 export const webhookController = {
   async brevo(req, res) {
     const event = req.body;
-    const messageId = event["message-id"] || event.messageId;
+    const rawId = event["message-id"] || event.messageId;
     const eventType = event.event;
+    const fullId = normalizeMessageId(rawId);
 
-    console.log(`[Webhook/Brevo] ${eventType} for ${event.email} (${messageId})`);
+    console.log(`[Webhook/Brevo] ${eventType} for ${event.email} | messageId=${fullId}`);
 
-    if (!messageId) return res.sendStatus(200);
-
-    const fullId = messageId.includes("@") ? `<${messageId}>` : messageId;
+    if (!fullId) return res.sendStatus(200);
 
     try {
+      const log = await sentLogRepository.findByMessageId(fullId);
+      if (!log) {
+        console.warn(`[Webhook/Brevo] No DB record found for messageId=${fullId}`);
+        return res.sendStatus(200);
+      }
+
+      console.log(`[Webhook/Brevo] Matched DB log id=${log.id}, updating ${eventType}...`);
+
       switch (eventType) {
         case "delivered":
           await sentLogRepository.markDelivered(fullId);
@@ -29,6 +44,8 @@ export const webhookController = {
         case "blocked":
           await sentLogRepository.markBounced(fullId);
           break;
+        default:
+          console.log(`[Webhook/Brevo] Ignoring event: ${eventType}`);
       }
     } catch (err) {
       console.error(`[Webhook/Brevo] Error: ${err.message}`);
@@ -46,6 +63,14 @@ export const webhookController = {
     if (!emailId) return res.sendStatus(200);
 
     try {
+      const log = await sentLogRepository.findByMessageId(emailId);
+      if (!log) {
+        console.warn(`[Webhook/Resend] No DB record found for email_id=${emailId}`);
+        return res.sendStatus(200);
+      }
+
+      console.log(`[Webhook/Resend] Matched DB log id=${log.id}, updating ${type}...`);
+
       switch (type) {
         case "email.delivered":
           await sentLogRepository.markDelivered(emailId);
