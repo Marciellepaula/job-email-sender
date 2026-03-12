@@ -12,7 +12,9 @@
     "migrate:status": "npx sequelize-cli db:migrate:status",
     "seed": "npx sequelize-cli db:seed:all",
     "seed:undo": "npx sequelize-cli db:seed:undo:all",
-    "db:reset": "npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all"
+    "db:reset": "npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all",
+    "build": "cd frontend && npm ci && npm run build",
+    "production": "npm run migrate && node src/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

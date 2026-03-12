@@ -1,6 +1,15 @@
 node_modules
 frontend/node_modules
-frontend/src
+frontend/dist
 .env
+*.log
+uploads/*
+!uploads/.gitkeep
+data/*
+!data/.gitkeep
 .git
-*.md
+.cursor
+agent-transcripts
+mcps
+terminals
+assets
