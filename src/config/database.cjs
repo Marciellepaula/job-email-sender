@@ -1,23 +1,29 @@
 require("dotenv").config();
 
+const isSSL = process.env.DATABASE_SSL === "true";
+
 module.exports = {
   development: {
     url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5434/job_email_sender",
     dialect: "postgres",
+    logging: false,
     define: {
       underscored: true,
       timestamps: true,
     },
   },
   production: {
-    url: process.env.DATABASE_URL,
+    use_env_variable: "DATABASE_URL",
     dialect: "postgres",
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
+    logging: false,
+    ...(isSSL && {
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
       },
-    },
+    }),
     define: {
       underscored: true,
       timestamps: true,
