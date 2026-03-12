@@ -42,7 +42,7 @@ export const api = {
   },
   getResumeStatus: () => unwrap(http.get("/resume/status")),
 
-  sendEmails: () => unwrap(http.post("/emails/send")),
+  sendEmails: (data) => unwrap(http.post("/emails/send", data)),
   getSendStatus: () => unwrap(http.get("/emails/status")),
   getLogs: () => unwrap(http.get("/emails/logs")),
   clearLogs: () => unwrap(http.delete("/emails/logs")),

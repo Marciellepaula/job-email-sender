@@ -10,7 +10,7 @@ export default function ResumeUpload({ uploaded, onUploaded }) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== "application/pdf") {
-      setError("Only PDF files are allowed");
+      setError("Apenas arquivos PDF são permitidos");
       return;
     }
     setError("");
@@ -19,7 +19,7 @@ export default function ResumeUpload({ uploaded, onUploaded }) {
       await api.uploadResume(file);
       onUploaded?.();
     } catch (err) {
-      setError(err.response?.data?.error || "Upload failed");
+      setError(err.response?.data?.error || "Falha no upload");
     } finally {
       setUploading(false);
     }
@@ -28,22 +28,22 @@ export default function ResumeUpload({ uploaded, onUploaded }) {
   return (
     <div className="card">
       <h2>
-        <Upload size={20} /> Resume
+        <Upload size={20} /> Currículo
       </h2>
       <div className="resume-area">
         {uploaded ? (
           <div className="resume-ok">
             <CheckCircle size={20} />
-            <span>Resume uploaded</span>
+            <span>Currículo enviado</span>
           </div>
         ) : (
           <div className="resume-warn">
             <AlertCircle size={20} />
-            <span>No resume uploaded yet</span>
+            <span>Nenhum currículo enviado</span>
           </div>
         )}
         <label className="btn btn-secondary upload-btn">
-          {uploading ? "Uploading..." : "Upload PDF"}
+          {uploading ? "Enviando..." : "Enviar PDF"}
           <input type="file" accept=".pdf" onChange={handleFile} hidden disabled={uploading} />
         </label>
       </div>

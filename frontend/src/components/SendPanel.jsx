@@ -1,24 +1,49 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Loader2, CheckCircle, XCircle, SkipForward } from "lucide-react";
+import { Send, Loader2, CheckCircle, XCircle, SkipForward, FileText } from "lucide-react";
 import { api } from "../api";
 
-export default function SendPanel({ contactsCount, resumeUploaded }) {
+const DEFAULT_SUBJECT = "Candidatura para Vaga de Desenvolvedor(a) de Software — {company}";
+const DEFAULT_MESSAGE = `Olá {recruiter},
+
+Meu nome é Marcielle Paula e sou desenvolvedora de software com experiência em Node.js, React, Laravel e desenvolvimento de APIs.
+
+Tenho muito interesse em oportunidades na {company}. Segue meu currículo em anexo para sua apreciação.
+
+Agradeço pela atenção e fico no aguardo de um retorno.
+
+Atenciosamente,
+Marcielle Paula`;
+
+export default function SendPanel({ contacts, selectedIds, resumeUploaded }) {
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState([]);
+  const [subject, setSubject] = useState(() => localStorage.getItem("emailSubject") || DEFAULT_SUBJECT);
+  const [message, setMessage] = useState(() => localStorage.getItem("emailMessage") || DEFAULT_MESSAGE);
+  const [showTemplate, setShowTemplate] = useState(false);
   const pollRef = useRef(null);
 
-  const canSend = contactsCount > 0 && resumeUploaded;
+  const sendCount = selectedIds.size > 0 ? selectedIds.size : contacts.length;
+  const canSend = sendCount > 0 && resumeUploaded;
+
+  useEffect(() => {
+    localStorage.setItem("emailSubject", subject);
+  }, [subject]);
+
+  useEffect(() => {
+    localStorage.setItem("emailMessage", message);
+  }, [message]);
 
   async function handleSend() {
     if (!canSend || sending) return;
     setSending(true);
     setResults([]);
     try {
-      await api.sendEmails();
+      const contactIds = selectedIds.size > 0 ? [...selectedIds] : null;
+      await api.sendEmails({ subject, message, contactIds });
       pollRef.current = setInterval(pollStatus, 2000);
     } catch (err) {
       setSending(false);
-      setResults([{ status: "failed", email: "system", error: err.response?.data?.message || err.message }]);
+      setResults([{ status: "failed", email: "sistema", error: err.response?.data?.message || err.message }]);
     }
   }
 
@@ -39,42 +64,94 @@ export default function SendPanel({ contactsCount, resumeUploaded }) {
     return () => clearInterval(pollRef.current);
   }, []);
 
+  function handleReset() {
+    setSubject(DEFAULT_SUBJECT);
+    setMessage(DEFAULT_MESSAGE);
+  }
+
   const sent = results.filter((r) => r.status === "sent").length;
   const failed = results.filter((r) => r.status === "failed").length;
   const skipped = results.filter((r) => r.status === "skipped").length;
+
+  const buttonLabel = selectedIds.size > 0
+    ? `Enviar para Selecionados (${selectedIds.size})`
+    : `Enviar para Todos (${contacts.length})`;
 
   return (
     <div className="card send-panel">
       <div className="card-header">
         <h2>
-          <Send size={20} /> Send Emails
+          <Send size={20} /> Enviar Emails
         </h2>
-        <button className="btn btn-primary" onClick={handleSend} disabled={!canSend || sending}>
-          {sending ? (
-            <>
-              <Loader2 size={18} className="spin" /> Sending...
-            </>
-          ) : (
-            <>
-              <Send size={18} /> Send to All ({contactsCount})
-            </>
-          )}
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowTemplate(!showTemplate)}
+            title="Editar template do email"
+          >
+            <FileText size={18} /> {showTemplate ? "Ocultar" : "Template"}
+          </button>
+          <button className="btn btn-primary" onClick={handleSend} disabled={!canSend || sending}>
+            {sending ? (
+              <>
+                <Loader2 size={18} className="spin" /> Enviando...
+              </>
+            ) : (
+              <>
+                <Send size={18} /> {buttonLabel}
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {showTemplate && (
+        <div className="template-editor">
+          <div className="form-group">
+            <label htmlFor="email-subject">Assunto</label>
+            <input
+              id="email-subject"
+              type="text"
+              className="form-input"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Assunto do email..."
+            />
+            <small className="hint-text">Use <code>{"{company}"}</code> para o nome da empresa</small>
+          </div>
+          <div className="form-group">
+            <label htmlFor="email-message">Mensagem</label>
+            <textarea
+              id="email-message"
+              className="form-input"
+              rows={10}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Corpo do email..."
+            />
+            <small className="hint-text">
+              Use <code>{"{company}"}</code> para nome da empresa e <code>{"{recruiter}"}</code> para nome do recrutador
+            </small>
+          </div>
+          <button className="btn btn-secondary" onClick={handleReset} style={{ fontSize: "12px" }}>
+            Restaurar padrão
+          </button>
+        </div>
+      )}
 
       {!canSend && !sending && (
         <p className="warn-text">
-          {!resumeUploaded && "Upload your resume first. "}
-          {contactsCount === 0 && "Add at least one contact."}
+          {!resumeUploaded && "Envie seu currículo primeiro. "}
+          {contacts.length === 0 && "Adicione pelo menos um contato."}
         </p>
       )}
 
       {results.length > 0 && (
         <>
           <div className="send-summary">
-            <span className="badge-sent">{sent} sent</span>
-            <span className="badge-failed">{failed} failed</span>
-            <span className="badge-skipped">{skipped} skipped</span>
+            <span className="badge-sent">{sent} enviado(s)</span>
+            <span className="badge-failed">{failed} falhou</span>
+            <span className="badge-skipped">{skipped} pulado(s)</span>
           </div>
           <div className="results-list">
             {results.map((r, i) => (

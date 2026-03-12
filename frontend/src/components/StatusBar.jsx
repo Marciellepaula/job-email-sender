@@ -6,7 +6,7 @@ export default function StatusBar({ health }) {
   const emailInfo = health.email || {};
   const providerLabel = emailInfo.providers?.length
     ? emailInfo.providers.join(" → ")
-    : "No provider";
+    : "Sem provedor";
 
   const items = [
     {
@@ -15,12 +15,12 @@ export default function StatusBar({ health }) {
       icon: <Wifi size={16} />
     },
     {
-      label: "Resume",
+      label: "Currículo",
       ok: health.resumeUploaded,
       icon: <Upload size={16} />
     },
     {
-      label: `${health.contactsCount} contacts`,
+      label: `${health.contactsCount} contato(s)`,
       ok: health.contactsCount > 0,
       icon: <Users size={16} />
     }

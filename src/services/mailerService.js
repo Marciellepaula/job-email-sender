@@ -22,8 +22,8 @@ function getTransporter() {
 }
 
 async function sendViaSMTP({ from, to, subject, text, html, attachments }) {
-  await getTransporter().sendMail({ from, to, subject, text, html, attachments });
-  return "smtp";
+  const info = await getTransporter().sendMail({ from, to, subject, text, html, attachments });
+  return { provider: "smtp", messageId: info.messageId };
 }
 
 async function verifySMTP() {
@@ -48,8 +48,8 @@ async function sendViaMailgun({ from, to, subject, text, html, attachments }) {
     }));
   }
 
-  await mg.messages.create(config.mailgun.domain, data);
-  return "mailgun";
+  const result = await mg.messages.create(config.mailgun.domain, data);
+  return { provider: "mailgun", messageId: result.id || null };
 }
 
 // ─── Provider: Resend ───────────────────────────────────
@@ -62,7 +62,8 @@ function getResendClient() {
 }
 
 async function sendViaResend({ from, to, subject, text, html, attachments }) {
-  const data = { from, to: [to], subject, text, html };
+  const sender = config.resend.from || from;
+  const data = { from: sender, to: [to], subject, text, html };
 
   if (attachments?.length) {
     data.attachments = attachments.map((a) => ({
@@ -71,11 +72,11 @@ async function sendViaResend({ from, to, subject, text, html, attachments }) {
     }));
   }
 
-  await getResendClient().emails.send(data);
-  return "resend";
+  const result = await getResendClient().emails.send(data);
+  return { provider: "resend", messageId: result.data?.id || null };
 }
 
-// ─── Provider: Brevo (ex-Sendinblue) ────────────────────
+// ─── Provider: Brevo (ex-Sendinblue) SMTP relay ─────────
 
 let brevoTransporter = null;
 
@@ -93,8 +94,8 @@ function getBrevoTransporter() {
 
 async function sendViaBrevo({ from, to, subject, text, html, attachments }) {
   const sender = config.brevo.from || from;
-  await getBrevoTransporter().sendMail({ from: sender, to, subject, text, html, attachments });
-  return "brevo";
+  const info = await getBrevoTransporter().sendMail({ from: sender, to, subject, text, html, attachments });
+  return { provider: "brevo", messageId: info.messageId };
 }
 
 async function verifyBrevo() {
@@ -176,8 +177,8 @@ export const mailerService = {
 
     for (const provider of providers) {
       try {
-        const usedProvider = await provider.send(options);
-        return { provider: usedProvider };
+        const result = await provider.send(options);
+        return result;
       } catch (err) {
         errors.push({ provider: provider.name, error: err.message });
         console.warn(`[Mailer] ${provider.name} failed: ${err.message}`);

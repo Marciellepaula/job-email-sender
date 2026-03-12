@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Mail, LogOut } from "lucide-react";
+import { Mail, LogOut, Send, FileText } from "lucide-react";
 import { api } from "./api";
 import LoginPage from "./components/LoginPage";
 import StatusBar from "./components/StatusBar";
@@ -21,6 +21,8 @@ export default function App() {
   const [user, setUser] = useState(getStoredUser);
   const [health, setHealth] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [page, setPage] = useState("send");
 
   const refresh = useCallback(async () => {
     try {
@@ -55,22 +57,53 @@ export default function App() {
           <Mail size={28} />
           <h1>Job Email Sender</h1>
         </div>
-        <p className="header-sub">Automated application emails with resume attachment</p>
+        <p className="header-sub">Envio automático de emails de candidatura com currículo</p>
         <div className="header-user">
           <span>{user.name || user.email}</span>
           <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> Sair
           </button>
         </div>
+
+        <nav className="nav-tabs">
+          <button
+            className={`nav-tab ${page === "send" ? "active" : ""}`}
+            onClick={() => setPage("send")}
+          >
+            <Send size={16} /> Enviar
+          </button>
+          <button
+            className={`nav-tab ${page === "history" ? "active" : ""}`}
+            onClick={() => setPage("history")}
+          >
+            <FileText size={16} /> Histórico
+          </button>
+        </nav>
       </header>
 
-      <main className="main">
-        <StatusBar health={health} />
-        <ResumeUpload uploaded={health?.resumeUploaded} onUploaded={refresh} />
-        <ContactList contacts={contacts} onRefresh={refresh} />
-        <SendPanel contactsCount={contacts.length} resumeUploaded={health?.resumeUploaded} />
-        <LogsPanel />
-      </main>
+      {page === "send" && (
+        <main className="main">
+          <StatusBar health={health} />
+          <ResumeUpload uploaded={health?.resumeUploaded} onUploaded={refresh} />
+          <ContactList
+            contacts={contacts}
+            onRefresh={refresh}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+          />
+          <SendPanel
+            contacts={contacts}
+            selectedIds={selectedIds}
+            resumeUploaded={health?.resumeUploaded}
+          />
+        </main>
+      )}
+
+      {page === "history" && (
+        <main className="main">
+          <LogsPanel />
+        </main>
+      )}
     </div>
   );
 }

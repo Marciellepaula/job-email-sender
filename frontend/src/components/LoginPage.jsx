@@ -26,7 +26,7 @@ export default function LoginPage({ onAuth }) {
       localStorage.setItem("user", JSON.stringify(data.user));
       onAuth(data.user);
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      setError(err.response?.data?.message || "Algo deu errado");
     } finally {
       setLoading(false);
     }
@@ -38,7 +38,7 @@ export default function LoginPage({ onAuth }) {
         <div className="login-header">
           <Mail size={36} className="login-icon" />
           <h1>Job Email Sender</h1>
-          <p>{isRegister ? "Create your account" : "Sign in to continue"}</p>
+          <p>{isRegister ? "Crie sua conta" : "Entre para continuar"}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -47,7 +47,7 @@ export default function LoginPage({ onAuth }) {
               <User size={18} />
               <input
                 type="text"
-                placeholder="Name"
+                placeholder="Nome"
                 value={form.name}
                 onChange={(e) => setField("name", e.target.value)}
                 required
@@ -70,7 +70,7 @@ export default function LoginPage({ onAuth }) {
             <Lock size={18} />
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Senha"
               value={form.password}
               onChange={(e) => setField("password", e.target.value)}
               required
@@ -87,14 +87,14 @@ export default function LoginPage({ onAuth }) {
 
           <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
             {loading ? (
-              "Loading..."
+              "Carregando..."
             ) : isRegister ? (
               <>
-                <UserPlus size={18} /> Create Account
+                <UserPlus size={18} /> Criar Conta
               </>
             ) : (
               <>
-                <LogIn size={18} /> Sign In
+                <LogIn size={18} /> Entrar
               </>
             )}
           </button>
@@ -103,16 +103,16 @@ export default function LoginPage({ onAuth }) {
         <div className="login-toggle">
           {isRegister ? (
             <span>
-              Already have an account?{" "}
+              Já tem uma conta?{" "}
               <button type="button" onClick={() => { setIsRegister(false); setError(""); }}>
-                Sign in
+                Entrar
               </button>
             </span>
           ) : (
             <span>
-              Don&apos;t have an account?{" "}
+              Não tem uma conta?{" "}
               <button type="button" onClick={() => { setIsRegister(true); setError(""); }}>
-                Register
+                Registrar
               </button>
             </span>
           )}

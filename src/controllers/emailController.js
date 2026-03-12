@@ -2,9 +2,9 @@ import { emailService } from "../services/emailService.js";
 import { success } from "../utils/response.js";
 
 export const emailController = {
-  async send(_req, res) {
-    const count = (await emailService.getLogs()).length;
-    emailService.sendAll((progress) => {
+  async send(req, res) {
+    const { subject, message, contactIds } = req.body || {};
+    emailService.sendAll({ subject, message, contactIds }, (progress) => {
       console.log(`[Progress] ${progress.status}: ${progress.email}`);
     }).catch((err) => console.error("[Send Error]", err.message));
 

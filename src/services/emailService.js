@@ -2,6 +2,7 @@ import { existsSync } from "fs";
 import { resolve } from "path";
 import { config } from "../config/index.js";
 import { mailerService } from "./mailerService.js";
+import { statSync } from "fs";
 import { contactRepository } from "../repositories/contactRepository.js";
 import { sentLogRepository } from "../repositories/sentLogRepository.js";
 import {
@@ -32,12 +33,16 @@ export const emailService = {
     return sendingResults;
   },
 
-  async sendAll(onProgress) {
+  async sendAll({ subject: customSubject, message: customMessage, contactIds } = {}, onProgress) {
     if (sendingInProgress) {
       throw new AppError("Already sending emails", 409);
     }
 
-    const contacts = await contactRepository.findAll();
+    let contacts = await contactRepository.findAll();
+    if (contactIds && contactIds.length > 0) {
+      const idSet = new Set(contactIds);
+      contacts = contacts.filter((c) => idSet.has(c.id));
+    }
     if (contacts.length === 0) {
       throw new AppError("No contacts found", 400);
     }
@@ -45,41 +50,61 @@ export const emailService = {
     sendingInProgress = true;
     sendingResults = [];
     const resumePath = findResume();
+    const hasAttachment = !!resumePath;
     const results = [];
-    const fromAddress = `"${config.senderName}" <${config.smtp.user || config.mailgun.from || config.resend.from}>`;
+    const fromAddress = config.brevo.from
+      || config.resend.from
+      || config.mailgun.from
+      || `"${config.senderName}" <${config.smtp.user}>`;
+
+    console.log(`[Email] Resume path: ${resumePath || "NOT FOUND"}`);
+    console.log(`[Email] From: ${fromAddress}`);
+    console.log(`[Email] Providers: ${mailerService.getProviderNames().join(" → ")}`);
+    if (customSubject) console.log(`[Email] Custom subject: ${customSubject}`);
 
     try {
       for (let i = 0; i < contacts.length; i++) {
         const { companyName, email, recruiterName } = contacts[i];
-
-        const alreadySent = await sentLogRepository.findSentByEmail(email);
-        if (alreadySent) {
-          const skip = { email, companyName, status: "skipped", reason: "already sent" };
-          await sentLogRepository.create(skip);
-          results.push(skip);
-          onProgress?.(skip);
-          continue;
-        }
+        const emailSubject = buildEmailSubject(companyName, customSubject);
 
         try {
-          const { provider } = await mailerService.sendMail({
+          const { provider, messageId } = await mailerService.sendMail({
             from: fromAddress,
             to: email,
-            subject: buildEmailSubject(companyName),
-            text: buildEmailText({ recruiterName, companyName }),
-            html: buildEmailHtml({ recruiterName, companyName }),
+            subject: emailSubject,
+            text: buildEmailText({ recruiterName, companyName }, customMessage),
+            html: buildEmailHtml({ recruiterName, companyName }, customMessage),
             attachments: resumePath
               ? [{ filename: "Marcielle_Paula_Resume.pdf", path: resumePath }]
               : [],
           });
 
-          const entry = { email, companyName, status: "sent" };
+          const entry = {
+            email,
+            companyName,
+            recruiterName: recruiterName || null,
+            status: "sent",
+            provider,
+            messageId: messageId || null,
+            subject: emailSubject,
+            hasAttachment,
+          };
           await sentLogRepository.create(entry);
           results.push(entry);
           onProgress?.(entry);
-          console.log(`[${i + 1}/${contacts.length}] Sent to ${email} via ${provider}`);
+          const attachInfo = resumePath ? `(+CV ${Math.round(statSync(resumePath).size / 1024)}KB)` : "(no CV)";
+          console.log(`[${i + 1}/${contacts.length}] Sent to ${email} via ${provider} ${attachInfo}`);
         } catch (err) {
-          const entry = { email, companyName, status: "failed", error: err.message };
+          const entry = {
+            email,
+            companyName,
+            recruiterName: recruiterName || null,
+            status: "failed",
+            provider: null,
+            subject: emailSubject,
+            hasAttachment,
+            error: err.message,
+          };
           await sentLogRepository.create(entry);
           results.push(entry);
           onProgress?.(entry);
