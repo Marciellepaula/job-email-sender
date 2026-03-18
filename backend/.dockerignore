@@ -1,0 +1,13 @@
+node_modules
+*.log
+.env
+.env.*
+uploads
+data
+*.log
+.git
+.cursor
+agent-transcripts
+mcps
+terminals
+assets

@@ -1,4 +1,4 @@
-# Job Email Sender API
+# Job Email Sender API (Monorepo)
 
 Professional REST API for automated job application emails, built with a clean MVC architecture.
 
@@ -11,27 +11,36 @@ Professional REST API for automated job application emails, built with a clean M
 - **Validation:** Joi
 - **Docs:** Swagger (OpenAPI 3.0)
 - **Logging:** Morgan
-- **Frontend:** React + Vite
+- **Frontend:** React + Vite (projeto separado em `/frontend`)
 
-## Project Structure
+## Arquitetura: Frontend e Backend separados
+
+O backend é **apenas API** (não serve o frontend). O frontend é um app React independente que consome a API.
+
+| Repositório | Backend (API) | Frontend (UI) |
+|-------------|----------------|----------------|
+| Pasta       | Raiz do repo   | `frontend/`   |
+| Deploy      | Render, Railway, VPS… | Netlify, Vercel, Render (Static)… |
+| URL exemplo | `https://job-email-sender-xxx.onrender.com` | `https://job-email-sender-ui.netlify.app` |
+
+**Backend:** configure `CORS_ORIGIN` com a URL do frontend (ex: `https://job-email-sender-ui.netlify.app`).
+
+**Frontend:** configure `VITE_API_URL` com a URL do backend (ex: `https://job-email-sender-xxx.onrender.com`). Em dev, deixe vazio para usar o proxy do Vite.
+
+## Project Structure (Frontend separado)
 
 ```
-src/
-  config/
-    database.js          # Sequelize connection
-    index.js             # Environment config
-  controllers/           # HTTP request handlers
-  models/                # Sequelize models (User, Contact, SentLog)
-  routes/                # Express route definitions + Swagger annotations
-  services/              # Business logic layer
-  repositories/          # Database query abstraction
-  middlewares/            # Auth, error handler, rate limiter, validation, upload
-  validators/            # Joi schemas
-  utils/                 # AppError, response helpers
-  docs/                  # Swagger setup
-  tests/                 # Test directory
-  app.js                 # Express app configuration
-  server.js              # Entry point (DB connect + listen)
+backend/
+  src/                  # API code (Express)
+  templates/            # Email templates
+  Dockerfile            # Backend container
+  package.json          # Backend scripts/deps
+  .env.example          # Backend env example
+
+frontend/
+  src/                  # React UI
+  package.json          # Frontend scripts/deps
+  vite.config.js
 ```
 
 ## API Endpoints
@@ -135,14 +144,17 @@ npm run dev
 npm start
 ```
 
-### Frontend development
+### Frontend (separado)
 
 ```bash
 cd frontend
+cp .env.example .env   # Em produção, defina VITE_API_URL com a URL do backend
 npm install
-npm run dev     # Starts on http://localhost:5173 with API proxy
-npm run build   # Builds to frontend/dist/
+npm run dev           # http://localhost:5173 (proxy para API em :3001)
+npm run build         # Gera frontend/dist/ para deploy estático
 ```
+
+Deploy do frontend (ex.: Netlify / Vercel): build command `npm run build`, publish directory `dist`. Configure a variável de ambiente `VITE_API_URL` com a URL do backend.
 
 ## Default Credentials
 
@@ -166,6 +178,7 @@ npm run build   # Builds to frontend/dist/
 | `SMTP_HOST`       | SMTP server host             | smtp.gmail.com                  |
 | `SMTP_PORT`       | SMTP server port             | 587                             |
 | `EMAIL_DELAY_MS`  | Delay between emails (ms)    | 7000                            |
+| `CORS_ORIGIN`     | Allowed frontend origin(s), comma-separated | (allow all if empty) |
 
 ## Swagger Documentation
 

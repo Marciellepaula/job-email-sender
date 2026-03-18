@@ -1,4 +1,13 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import { existsSync } from "fs";
+import { resolve } from "path";
+
+// Quando o backend está em `backend/`, o `.env` pode estar na raiz do monorepo.
+// Carregamos o `.env` local se existir; caso contrário, tentamos a raiz.
+const localEnv = resolve(process.cwd(), ".env");
+const rootEnv = resolve(process.cwd(), "..", ".env");
+const envPath = existsSync(localEnv) ? localEnv : rootEnv;
+dotenv.config({ path: envPath });
 
 export const config = {
   port: Number(process.env.PORT) || 3001,
@@ -48,4 +57,8 @@ export const config = {
   },
 
   delayMs: Number(process.env.EMAIL_DELAY_MS) || 7000,
+
+  cors: {
+    origin: process.env.CORS_ORIGIN || true,
+  },
 };
