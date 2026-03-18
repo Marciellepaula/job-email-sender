@@ -57,8 +57,16 @@ export const webhookController = {
   async resend(req, res) {
     const { type, data } = req.body;
 
-    const emailId = data?.email_id;
-    console.log(`[Webhook/Resend] ${type} for email_id=${emailId}`);
+    const rawIdCandidates = [
+      data?.email_id,
+      data?.id,
+      data?.message_id,
+      data?.messageId,
+    ].filter(Boolean);
+    const rawId = rawIdCandidates[0] || null;
+    const emailId = normalizeMessageId(rawId);
+
+    console.log(`[Webhook/Resend] ${type} for emailId=${emailId}`);
 
     if (!emailId) return res.sendStatus(200);
 

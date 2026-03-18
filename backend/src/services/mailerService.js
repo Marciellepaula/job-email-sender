@@ -5,6 +5,13 @@ import { Resend } from "resend";
 import { readFileSync } from "fs";
 import { config } from "../config/index.js";
 
+function parseFrom(fromValue) {
+  if (!fromValue || typeof fromValue !== "string") return { name: "", email: "" };
+  const m = fromValue.match(/^(.*)<([^>]+)>$/);
+  if (m) return { name: m[1].trim().replace(/^"|"$/g, ""), email: m[2].trim() };
+  return { name: "", email: fromValue.trim() };
+}
+
 // ─── Provider: SMTP (Gmail, Outlook, etc.) ──────────────
 
 let transporter = null;
@@ -62,7 +69,16 @@ function getResendClient() {
 }
 
 async function sendViaResend({ from, to, subject, text, html, attachments }) {
-  const sender = from || config.resend.from;
+  // O Resend exige que o domínio do email "from" esteja verificado.
+  // Então a gente usa o email verificado do RESEND_FROM (config.resend.from)
+  // e mantém apenas o NOME customizado que vem em `from`.
+  const customFrom = parseFrom(from);
+  const resendFrom = parseFrom(config.resend.from);
+
+  const senderEmail = resendFrom.email || config.resend.from;
+  const senderName = customFrom.name || resendFrom.name;
+  const sender = senderEmail && senderName ? `${senderName} <${senderEmail}>` : config.resend.from;
+
   const data = { from: sender, to: [to], subject, text, html };
 
   if (attachments?.length) {
@@ -73,7 +89,23 @@ async function sendViaResend({ from, to, subject, text, html, attachments }) {
   }
 
   const result = await getResendClient().emails.send(data);
-  return { provider: "resend", messageId: result.data?.id || null };
+
+  // Se der erro, a API geralmente vem com `error` e `data: null`.
+  // A gente precisa lançar para ativar fallback (brevo -> resend -> smtp).
+  if (result?.error) {
+    const errMsg = result?.error?.message || "Resend send error";
+    throw new Error(errMsg);
+  }
+
+  // Resend pode retornar o identificador em campos diferentes dependendo da versão.
+  const messageId =
+    result?.data?.id ||
+    result?.id ||
+    result?.data?.email_id ||
+    result?.data?.message_id ||
+    null;
+
+  return { provider: "resend", messageId };
 }
 
 // ─── Provider: Brevo (ex-Sendinblue) SMTP relay ─────────
@@ -83,7 +115,10 @@ let brevoTransporter = null;
 function getBrevoTransporter() {
   if (!brevoTransporter) {
     brevoTransporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
+      // O Brevo apresenta certificados com SAN/alt-names diferentes.
+      // "smtp-relay.brevo.com" gera erro de hostname vs certificado e causa fallback para outro provedor.
+      // Usamos o host correto que bate com o certificado.
+      host: "smtp-relay.sendinblue.com",
       port: 587,
       secure: false,
       auth: { user: config.brevo.user, pass: config.brevo.pass },
