@@ -12,6 +12,8 @@ import { setupSwagger } from "./docs/swagger.js";
 import { config } from "./config/index.js";
 
 const app = express();
+// Evita 304 em JSON dinâmico: o browser/axios pode receber corpo vazio e travar o polling (ex.: /emails/status).
+app.set("etag", false);
 
 const corsOrigin = config.cors.origin;
 const corsOptions =
@@ -24,6 +26,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+app.use("/api", (req, res, next) => {
+  res.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
 app.use("/api", apiLimiter);
 
 app.use("/uploads", express.static(UPLOADS_DIR));

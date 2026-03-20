@@ -4,7 +4,13 @@ const baseURL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`
   : "/api";
 
-const http = axios.create({ baseURL });
+const http = axios.create({
+  baseURL,
+  headers: {
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+  },
+});
 
 http.interceptors.request.use((cfg) => {
   const token = localStorage.getItem("token");
@@ -47,7 +53,8 @@ export const api = {
   getResumeStatus: () => unwrap(http.get("/resume/status")),
 
   sendEmails: (data) => unwrap(http.post("/emails/send", data)),
-  getSendStatus: () => unwrap(http.get("/emails/status")),
+  getSendStatus: () =>
+    unwrap(http.get("/emails/status", { params: { _: Date.now() } })),
   getLogs: () => unwrap(http.get("/emails/logs")),
   clearLogs: () => unwrap(http.delete("/emails/logs")),
 };
