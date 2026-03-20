@@ -26,23 +26,17 @@ export default function App() {
   const [page, setPage] = useState("send");
 
   const refresh = useCallback(async () => {
-    const [healthResult, contactsResult, resumeResult] = await Promise.allSettled([
-      api.getHealth(),
-      api.getContacts(),
-      api.getResumeStatus(),
-    ]);
+    api.getContacts()
+      .then((data) => setContacts(Array.isArray(data) ? data : []))
+      .catch(() => {});
 
-    if (healthResult.status === "fulfilled") {
-      setHealth(healthResult.value);
-    }
+    api.getHealth()
+      .then((data) => setHealth(data))
+      .catch(() => {});
 
-    if (contactsResult.status === "fulfilled") {
-      setContacts(Array.isArray(contactsResult.value) ? contactsResult.value : []);
-    }
-
-    if (resumeResult.status === "fulfilled") {
-      setResumeUploaded(!!resumeResult.value?.uploaded);
-    }
+    api.getResumeStatus()
+      .then((data) => setResumeUploaded(!!data?.uploaded))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
