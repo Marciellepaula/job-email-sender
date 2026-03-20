@@ -25,12 +25,17 @@ export default function App() {
   const [page, setPage] = useState("send");
 
   const refresh = useCallback(async () => {
-    try {
-      const [h, c] = await Promise.all([api.getHealth(), api.getContacts()]);
-      setHealth(h);
-      setContacts(c);
-    } catch {
-      /* server might not be ready */
+    const [healthResult, contactsResult] = await Promise.allSettled([
+      api.getHealth(),
+      api.getContacts(),
+    ]);
+
+    if (healthResult.status === "fulfilled") {
+      setHealth(healthResult.value);
+    }
+
+    if (contactsResult.status === "fulfilled") {
+      setContacts(Array.isArray(contactsResult.value) ? contactsResult.value : []);
     }
   }, []);
 
