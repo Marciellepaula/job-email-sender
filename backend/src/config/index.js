@@ -58,6 +58,12 @@ export const config = {
 
   delayMs: Number(process.env.EMAIL_DELAY_MS) || 7000,
 
+  /** Timeout por tentativa de envio (SMTP/API), em ms — evita ficar preso minutos no primeiro provedor */
+  mailSendTimeoutMs: Number(process.env.EMAIL_SEND_TIMEOUT_MS) || 45000,
+
+  /** Timeouts de conexão SMTP (nodemailer) — falha rápido e tenta o próximo provedor */
+  smtpConnectionTimeoutMs: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS) || 20000,
+
   cors: {
     origin: process.env.CORS_ORIGIN || true,
   },

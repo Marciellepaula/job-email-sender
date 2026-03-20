@@ -5,6 +5,24 @@ import { Resend } from "resend";
 import { readFileSync } from "fs";
 import { config } from "../config/index.js";
 
+const smtpTimeouts = {
+  connectionTimeout: config.smtpConnectionTimeoutMs,
+  greetingTimeout: config.smtpConnectionTimeoutMs,
+  socketTimeout: config.smtpConnectionTimeoutMs,
+};
+
+function withTimeout(promise, ms, label) {
+  if (!ms || ms <= 0) return promise;
+  let t;
+  const timeoutPromise = new Promise((_, reject) => {
+    t = setTimeout(
+      () => reject(new Error(`${label}: tempo esgotado (${ms}ms)`)),
+      ms
+    );
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(t));
+}
+
 function parseFrom(fromValue) {
   if (!fromValue || typeof fromValue !== "string") return { name: "", email: "" };
   const m = fromValue.match(/^(.*)<([^>]+)>$/);
@@ -23,6 +41,7 @@ function getTransporter() {
       port: config.smtp.port,
       secure: config.smtp.port === 465,
       auth: { user: config.smtp.user, pass: config.smtp.pass },
+      ...smtpTimeouts,
     });
   }
   return transporter;
@@ -122,6 +141,7 @@ function getBrevoTransporter() {
       port: 587,
       secure: false,
       auth: { user: config.brevo.user, pass: config.brevo.pass },
+      ...smtpTimeouts,
     });
   }
   return brevoTransporter;
@@ -210,9 +230,15 @@ export const mailerService = {
 
     const errors = [];
 
+    const timeoutMs = config.mailSendTimeoutMs;
+
     for (const provider of providers) {
       try {
-        const result = await provider.send(options);
+        const result = await withTimeout(
+          provider.send(options),
+          timeoutMs,
+          provider.name
+        );
         return result;
       } catch (err) {
         errors.push({ provider: provider.name, error: err.message });
