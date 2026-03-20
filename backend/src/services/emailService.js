@@ -1,6 +1,7 @@
 import { existsSync } from "fs";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
+import { RESUME_PDF_PATH } from "../config/paths.js";
 import { config } from "../config/index.js";
 import { mailerService } from "./mailerService.js";
 import { statSync } from "fs";
@@ -22,18 +23,12 @@ function findResume() {
   const serviceDir = resolve(currentFile, "..");
   const backendDir = resolve(serviceDir, "..", "..");
   const paths = [
-    // Optional explicit override.
     process.env.RESUME_PATH || "",
-
-    // Current working directory candidates.
+    RESUME_PDF_PATH,
     resolve("uploads/resume.pdf"),
     resolve("data/resume.pdf"),
-
-    // Monorepo/root-dir candidates.
     resolve("backend/uploads/resume.pdf"),
     resolve("backend/data/resume.pdf"),
-
-    // Absolute path from backend source location.
     resolve(backendDir, "uploads/resume.pdf"),
     resolve(backendDir, "data/resume.pdf"),
   ].filter(Boolean);

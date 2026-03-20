@@ -20,14 +20,16 @@ function getStoredUser() {
 export default function App() {
   const [user, setUser] = useState(getStoredUser);
   const [health, setHealth] = useState(null);
+  const [resumeUploaded, setResumeUploaded] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [page, setPage] = useState("send");
 
   const refresh = useCallback(async () => {
-    const [healthResult, contactsResult] = await Promise.allSettled([
+    const [healthResult, contactsResult, resumeResult] = await Promise.allSettled([
       api.getHealth(),
       api.getContacts(),
+      api.getResumeStatus(),
     ]);
 
     if (healthResult.status === "fulfilled") {
@@ -36,6 +38,10 @@ export default function App() {
 
     if (contactsResult.status === "fulfilled") {
       setContacts(Array.isArray(contactsResult.value) ? contactsResult.value : []);
+    }
+
+    if (resumeResult.status === "fulfilled") {
+      setResumeUploaded(!!resumeResult.value?.uploaded);
     }
   }, []);
 
@@ -48,6 +54,7 @@ export default function App() {
     localStorage.removeItem("user");
     setUser(null);
     setHealth(null);
+    setResumeUploaded(false);
     setContacts([]);
   }
 
@@ -88,8 +95,8 @@ export default function App() {
 
       {page === "send" && (
         <main className="main">
-          <StatusBar health={health} />
-          <ResumeUpload uploaded={health?.resumeUploaded} onUploaded={refresh} />
+          <StatusBar health={health} resumeUploaded={resumeUploaded} />
+          <ResumeUpload uploaded={resumeUploaded} onUploaded={refresh} />
           <ContactList
             contacts={contacts}
             onRefresh={refresh}
@@ -99,7 +106,7 @@ export default function App() {
           <SendPanel
             contacts={contacts}
             selectedIds={selectedIds}
-            resumeUploaded={health?.resumeUploaded}
+            resumeUploaded={resumeUploaded}
           />
         </main>
       )}

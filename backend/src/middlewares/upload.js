@@ -1,12 +1,10 @@
 import multer from "multer";
-import { resolve } from "path";
-import { existsSync, mkdirSync } from "fs";
+import { ensureUploadsDir, UPLOADS_DIR } from "../config/paths.js";
 
-const uploadsDir = resolve("uploads");
-if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
+ensureUploadsDir();
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename: (_req, _file, cb) => cb(null, "resume.pdf"),
 });
 

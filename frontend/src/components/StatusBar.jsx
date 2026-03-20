@@ -1,12 +1,15 @@
 import { CheckCircle, XCircle, Upload, Users, Wifi } from "lucide-react";
 
-export default function StatusBar({ health }) {
+export default function StatusBar({ health, resumeUploaded }) {
   if (!health) return null;
 
   const emailInfo = health.email || {};
   const providerLabel = emailInfo.providers?.length
     ? emailInfo.providers.join(" → ")
     : "Sem provedor";
+
+  const resumeOk =
+    typeof resumeUploaded === "boolean" ? resumeUploaded : !!health.resumeUploaded;
 
   const items = [
     {
@@ -16,7 +19,7 @@ export default function StatusBar({ health }) {
     },
     {
       label: "Currículo",
-      ok: health.resumeUploaded,
+      ok: resumeOk,
       icon: <Upload size={16} />
     },
     {
